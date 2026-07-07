@@ -1,0 +1,61 @@
+name: dbt Enterprise CI Pipeline
+
+# Pemicu (Trigger): Jalankan pipeline setiap kali ada Pull Request ke branch main
+on:
+  pull_request:
+    branches:
+      - main
+
+# Memastikan jika ada commit baru di PR yang sama, proses running yang lama akan di-cancel otomatis (Hemat cost runner)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dbt-validation:
+    name: Validate dbt Code and Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout: Mengunduh source code dari repositori ke Runner GitHub
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Install Python: Mempersiapkan lingkungan Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip' # Mempercepat proses install berikutnya dengan caching
+
+      # 3. Install dbt: Memasang dbt-postgres dan linter
+      - name: Install dbt and Linter
+        run: |
+          pip install --upgrade pip
+          pip install dbt-postgres sqlfluff sqlfluff-dialect-dbt
+
+      # 4. dbt deps: Mengunduh paket eksternal (dbt_utils, elementary, dll)
+      - name: Install dbt Packages
+        run: dbt deps
+
+      # 5. Lint Check (Optional tapi Sangat Direkomendasikan)
+      - name: Check SQL Style (SQLFluff)
+        run: sqlfluff lint models/ --dialect dbt
+
+      # 6. dbt seed & dbt build: Inti dari Build Validation
+      - name: Execute dbt Build Validation
+        env:
+          # Menyuntikkan kredensial Service Account CI (svc_dbt_ci) dari GitHub Secrets
+          DBT_DEV_HOST: ${{ secrets.CI_DB_HOST }}
+          DBT_DEV_USER: ${{ secrets.CI_DB_USER }}
+          DBT_DEV_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+          DBT_DEV_DBNAME: ${{ secrets.CI_DB_NAME }}
+          DBT_DEV_PORT: 5432
+          # Praktik terbaik: Buat skema unik berbasis nomor PR agar tidak bentrok antar-developer
+          DBT_DEV_SCHEMA: "ci_pr_${{ github.event.number }}"
+        run: |
+          # Memasukkan csv data statis (jika ada)
+          dbt seed --target dev
+          
+          # Jalankan, compile, dan uji coba seluruh model dari hulu ke hilir
+          dbt build --target dev

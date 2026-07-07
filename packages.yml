@@ -1,3 +1,16 @@
 packages:
+  # 1. dbt_utils: Utilitas SQL dan pengujian tingkat lanjut
   - package: dbt-labs/dbt_utils
-    version: 1.3.0
+    version: 1.4.1
+
+  # 2. elementary: Observabilitas data & deteksi anomali
+  - package: elementary-data/elementary
+    version: 0.25.0
+
+  # 3. codegen: Generator kode otomatis untuk menghemat waktu pengetikan YAML
+  - package: dbt-labs/codegen
+    version: 0.14.1
+
+  # 4. audit_helper: Alat bantu audit untuk membandingkan dua dataset
+  - package: dbt-labs/audit_helper
+    version: 0.14.0

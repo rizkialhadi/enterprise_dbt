@@ -1,0 +1,63 @@
+version: 2
+
+sources:
+  - name: ecommerce_raw
+    database: enterprise_db
+    schema: raw
+    
+    # ------------------------------------------------------------------
+    # KONFIGURASI FRESHNESS GLOBAL
+    # ------------------------------------------------------------------
+    # Jika data tidak diperbarui dalam waktu yang ditentukan, dbt akan alert.
+    freshness:
+      warn_after: {count: 12, period: hour}
+      error_after: {count: 24, period: hour}
+    
+    # Kolom di PostgreSQL yang mencatat kapan data di-insert oleh ingestion tool (Fivetran/Airbyte/Sling)
+    loaded_at_field: ingested_at
+
+    # ------------------------------------------------------------------
+    # DEFINISI TABEL & DATA QUALITY TESTS DI HULU
+    # ------------------------------------------------------------------
+    tables:
+      - name: raw_customers
+        description: "Data profil mentah pelanggan langsung dari database aplikasi."
+        columns:
+          - name: id
+            tests:
+              - unique
+              - not_null
+
+      - name: raw_orders
+        description: "Data transaksi pesanan e-commerce."
+        # Overriding freshness khusus untuk tabel orders (karena transaksi harus lebih real-time)
+        freshness:
+          warn_after: {count: 3, period: hour}
+          error_after: {count: 6, period: hour}
+        columns:
+          - name: id
+            tests:
+              - unique
+              - not_null
+
+      # - name: raw_products
+      #   description: "Katalog produk master."
+      #   # Tabel master jarang berubah, kita matikan pengecekan freshness agar tidak false-alarm
+      #   freshness: null 
+      #   columns:
+      #     - name: id
+      #       tests:
+      #         - unique
+      #         - not_null
+
+      - name: raw_payments
+        description: "Data transaksi pembayaran dari payment gateway."
+        columns:
+          - name: id
+            tests:
+              - unique
+              - not_null
+          - name: payment_method
+            tests:
+              - accepted_values:
+                  values: ['credit_card', 'e_wallet', 'bank_transfer']

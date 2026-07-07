@@ -19,17 +19,26 @@ clean-targets:
 # Konfigurasi Model berdasarkan Layering Target Arsitektur
 models:
   enterprise_dbt:
-    # 1. Staging Layer: Hanya membersihkan dan memformat data mentah (raw)
+    # ------------------------------------------------------------------
+    # BRONZE LAYER (Staging) -> Materialization: VIEW
+    # ------------------------------------------------------------------
     staging:
       +materialized: view
       +schema: staging
-    
-    # 2. Intermediate Layer: Transformasi/Join kompleks sebelum jadi Marts
-    intermediate:
-      +materialized: ephemeral # Menghemat storage di Postgres, jadi subquery
-      +schema: intermediate
 
-    # 3. Marts Layer: Siap dikonsumsi oleh BI / Superset
+    # ------------------------------------------------------------------
+    # SILVER LAYER (Intermediate) -> Materialization: INCREMENTAL
+    # ------------------------------------------------------------------
+    intermediate:
+      +materialized: incremental
+      +schema: intermediate
+      # Strategi inkremental untuk PostgreSQL (merge/delete+insert)
+      +incremental_strategy: delete+insert
+      +unique_key: order_id
+
+    # ------------------------------------------------------------------
+    # GOLD LAYER (Marts) -> Materialization: TABLE
+    # ------------------------------------------------------------------
     marts:
       +materialized: table
       +schema: marts
