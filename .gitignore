@@ -1,0 +1,8 @@
+logs/
+target/
+dbt_packages/
+.venv/
+*.pyc
+.env
+profiles.yml
+.vscode/

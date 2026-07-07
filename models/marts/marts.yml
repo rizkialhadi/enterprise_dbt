@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "{{ doc('dim_customers_overview') }}"
+    # tests:
+    #   # 1. Mengetes integritas data tingkat lanjut (Kombinasi unik)
+    #   - dbt_utils.unique_combination_of_columns:
+    #       combination_of_columns:
+    #         - customer_id
+    #         - customer_email
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - customer_id
+              - customer_email
+
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+          
+      - name: total_orders
+        description: "Total pesanan pelanggan."
+        # tests:
+          # 2. Menjamin nilai pesanan tidak boleh minus (Custom Expression)
+          # - dbt_utils.expression_is_true:
+          #     expression: ">= 0"
+
+        tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "total_orders >= 0"
+              
+      - name: customer_email
+        tests:
+          - not_null

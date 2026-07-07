@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: ecommerce_raw
+    database: dev_db # Sesuaikan dengan DBT_DEV_DBNAME Anda
+    schema: raw
+    tables:
+      - name: raw_customers
+      - name: raw_orders

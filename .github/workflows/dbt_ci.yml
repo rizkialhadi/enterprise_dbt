@@ -1,0 +1,37 @@
+name: dbt CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  dbt-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-state: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install dbt-postgres sqlfluff sqlfluff-dialect-dbt
+          dbt deps
+
+      - name: Run SQLFluff Linter
+        run: sqlfluff lint models/
+
+      - name: Run dbt Build (Validate SQL & Tests)
+        env:
+          # Menggunakan mock/CI database environment untuk testing
+          DBT_DEV_HOST: ${{ secrets.CI_DB_HOST }}
+          DBT_DEV_USER: ${{ secrets.CI_DB_USER }}
+          DBT_DEV_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+          DBT_DEV_DBNAME: ${{ secrets.CI_DB_NAME }}
+          DBT_DEV_PORT: 5432
+        run: dbt build --target dev

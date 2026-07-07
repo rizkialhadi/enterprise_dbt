@@ -1,0 +1,11 @@
+[sqlfluff]
+dialect = dbt
+templater = dbt
+max_line_length = 120
+
+[sqlfluff:templater:dbt]
+profile = enterprise_dbt
+target = dev
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
